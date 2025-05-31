@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cooking Recipe Book</title>
+  
+  <style>
+    body {
+      font-family: Times New Roman, sans-serif;
+      background: #f9f9f9;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: red;
+    }
+    .header-images {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .header-images img {
+      max-height: 150px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .form-section {
+      background: #fff;
+      padding: 20px;
+      margin-bottom: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .recipe {
+      background: #fff;
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .recipe img {
+      max-width: 100%;
+      border-radius: 10px;
+      margin: 10px 0;
+    }
+    .method {
+      background: #f1f1f1;
+      padding: 10px;
+      border-radius: 6px;
+      white-space: pre-line;
+    }
+    .actions button {
+      margin-right: 10px;
+      background-color: #007bff;
+    }
+    .actions .delete {
+      background-color: #dc3545;
+    }
+    .author-filter {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .author-filter input {
+      width: auto;
+      padding: 8px;
+    }
+  </style>
+
+</head>
+<body>
+  <h1>Cooking Recipe Book</h1>
+  <p style="text-align: center; max-width: 700px; margin: 0 auto 30px; font-size: 1.1em; color: #555;">
+ " Welcome to the Cooking Recipe Book!"
+  A digital collection of delicious and easy to follow recipes. This interactive app allows users to add their favorite recipes, view step-by-step cooking instructions, and browse meals by author. With support for images and author-specific access controls, it's perfect for home cooks, culinary enthusiasts, or anyone who loves sharing recipes. Only the author of a recipe can delete it, making it a secure and personal recipe manager.
+</p>
+  <div class="header-images">
+    <img src="https://up.yimg.com/ib/th?id=OIP.roeXhygEH0QkGd5qunLcRwHaEo&pid=Api&rs=1&c=1&qlt=95&w=184&h=115" alt="Recipe Book">
+    
+  </div>
+
+  <div class="form-section">
+    <input type="text" id="author-name" placeholder="Author Name" />
+    <input type="text" id="recipe-name" placeholder="Recipe Name" />
+    <input type="text" id="recipe-image" placeholder="Image URL (optional)" />
+    <textarea id="recipe-ingredients" placeholder="Ingredients (separated by commas)"></textarea>
+    <textarea id="recipe-method" placeholder="Step-by-step Cooking Process"></textarea>
+    <button onclick="handleAddRecipe()">Add Recipe</button>
+  </div>
+
+  <div class="author-filter">
+    <label for="filter-author">Filter by Author: </label>
+    <input type="text" id="filter-author" placeholder="Enter author name" oninput="filterRecipes()" />
+  </div>
+
+  <div id="recipes-container"></div>
+
+  <script>
+    function handleAddRecipe() {
+      const name = document.getElementById("recipe-name").value;
+      const image = document.getElementById("recipe-image").value;
+      const ingredients = document.getElementById("recipe-ingredients").value;
+      const method = document.getElementById("recipe-method").value;
+      const author = document.getElementById("author-name").value || 'anonymous';
+
+      addRecipe(name, image, ingredients, method, author);
+    }
+
+    function addRecipe(name, image, ingredients, method, author) {
+      if (!name || !method) {
+        alert("Recipe name and method are required.");
+        return;
+      }
+
+      const container = document.getElementById("recipes-container");
+      const recipeDiv = document.createElement("div");
+      recipeDiv.className = "recipe";
+      recipeDiv.dataset.author = author.toLowerCase();
+
+      let html = `<h2>${name}</h2>`;
+      if (image) {
+        html += `<img src="${image}" alt="${name}">`;
+      }
+      html += `<h4>Ingredients:</h4><p>${ingredients}</p>`;
+      html += `<h4>Cooking Method:</h4><div class="method">${method}</div>`;
+      html += `<p><strong>Author:</strong> ${author}</p>`;
+      html += `
+        <div class="actions">
+          <button onclick="toggleMethod(this)">Toggle Method</button>
+          <button class="delete" onclick="deleteRecipe(this)">Delete</button>
+        </div>
+      `;
+
+      recipeDiv.innerHTML = html;
+      container.appendChild(recipeDiv);
+      filterRecipes();
+    }
+
+    function deleteRecipe(button) {
+      const recipeDiv = button.closest(".recipe");
+      const author = recipeDiv.dataset.author;
+      const currentUser = (document.getElementById("author-name").value || 'anonymous').toLowerCase();
+
+      if (author !== currentUser) {
+        alert("Only the author can delete this recipe.");
+        return;
+      }
+
+      recipeDiv.remove();
+    }
+
+    function toggleMethod(button) {
+      const methodDiv = button.parentElement.previousElementSibling;
+      methodDiv.style.display = methodDiv.style.display === "none" ? "block" : "none";
+    }
+
+    function filterRecipes() {
+      const filterValue = document.getElementById("filter-author").value.toLowerCase();
+      const recipes = document.querySelectorAll(".recipe");
+
+      recipes.forEach(recipe => {
+        const author = recipe.dataset.author;
+        if (filterValue === "" || author.includes(filterValue)) {
+          recipe.style.display = "block";
+        } else {
+          recipe.style.display = "none";
+        }
+      });
+    }
+
+    const recipes = [
+      { name: "Spaghetti Bolognese", image: "https://tse3.mm.bing.net/th?id=OIP.srYCBEeyvxhhycXZfDJ9sQHaE7&pid=Api&P=0&h=180", ingredients: "Spaghetti, minced beef, tomato sauce, garlic, onion, olive oil, salt, pepper", method: "1. Cook spaghetti per instructions.\n2. Sauté garlic and onion in olive oil.\n3. Add beef and cook until brown.\n4. Stir in tomato sauce, simmer 20 minutes.\n5. Serve sauce over spaghetti.", author: "admin" },
+      { name: "Pancakes", image: "https://tse3.mm.bing.net/th?id=OIP.ApDQBKU6Dp4cG9tYFuIsqAHaDv&pid=Api&P=0&h=180", ingredients: "Flour, eggs, milk, baking powder, sugar, salt, butter", method: "1. Mix dry ingredients.\n2. Add eggs and milk, whisk until smooth.\n3. Pour batter on hot pan.\n4. Flip when bubbles form.\n5. Serve with toppings.", author: "admin" },
+      { name: "Chicken Curry", image: "https://tse3.mm.bing.net/th?id=OIP.Ddmp0rpEx5PGPQk4Xv--bgHaFj&pid=Api&P=0&h=180", ingredients: "Chicken, onion, tomato, garlic, ginger, curry powder, salt, oil", method: "1. Sauté onion, garlic, ginger.\n2. Add chicken, cook until brown.\n3. Stir in tomatoes and curry powder.\n4. Simmer until chicken is tender.", author: "admin" },
+      { name: "Greek Salad", image: "https://tse2.mm.bing.net/th?id=OIP.Vzl9BYyrVhw9YX9n2iqJDgHaLH&pid=Api&P=0&h=180", ingredients: "Tomatoes, cucumber, olives, feta, olive oil, oregano", method: "1. Chop vegetables.\n2. Toss with olive oil and oregano.\n3. Top with crumbled feta.", author: "admin" },
+      { name: "Veg Tacos", image: "https://tse2.mm.bing.net/th?id=OIP.IAcugyQTzvdHfqhBshMtRgHaLG&pid=Api&P=0&h=180", ingredients: "Taco shells, vegetables, lettuce, tomato, cheese, salsa", method: "1. Cook vegetables with spices.\n2. Assemble tacos with toppings.", author: "admin" },
+      { name: "French Toast", image: "https://tse1.mm.bing.net/th?id=OIP.WuannF5b7i1cm7bm_sDZ8wHaHa&pid=Api&P=0&h=180", ingredients: "Bread, eggs, milk, cinnamon, butter", method: "1. Whisk eggs, milk, and cinnamon.\n2. Dip bread slices.\n3. Cook on buttered pan until golden.", author: "admin" },
+      { name: "Veggie Stir Fry", image: "https://tse3.mm.bing.net/th?id=OIP.HewJ2pUKHQIlrlR0T7lqEAHaHa&pid=Api&P=0&h=180", ingredients: "Mixed vegetables, soy sauce, garlic, sesame oil", method: "1. Heat oil in wok.\n2. Sauté garlic.\n3. Add vegetables and stir-fry.\n4. Add soy sauce, serve hot.", author: "admin" },
+      { name: "Grilled Cheese Sandwich", image: "https://tse3.mm.bing.net/th?id=OIP.-uw6NjnMZmdXQrWnOIDDBQHaFY&pid=Api&P=0&h=180", ingredients: "Bread, cheese, butter", method: "1. Butter bread.\n2. Place cheese between slices.\n3. Grill until golden.", author: "admin" },
+      { name: "Omelette", image: "https://tse2.mm.bing.net/th?id=OIP.smJdALq5kPb0wh9vOC57FgHaE8&pid=Api&P=0&h=180", ingredients: "Eggs, cheese, vegetables, salt, pepper", method: "1. Beat eggs with salt and pepper.\n2. Cook in pan.\n3. Add fillings and fold.", author: "admin" },
+      { name: "Banana Smoothie", image: "https://tse2.mm.bing.net/th?id=OIP.-fFUXa_8-JX1tej5p66I1gHaHa&pid=Api&P=0&h=180", ingredients: "Banana, milk, honey, ice", method: "1. Blend all ingredients until smooth.\n2. Serve chilled.", author: "admin" }
+    ];
+
+    window.onload = () => {
+      recipes.forEach(r => addRecipe(r.name, r.image, r.ingredients, r.method, r.author));
+    };
+  </script>
+</body>
+</html>
+
