@@ -1,1 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>User Blog System with Images & Comments</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    h2 {
+      text-align: center;
+    }
+    form input, form textarea {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    form button {
+      width: 100%;
+      padding: 10px;
+      background: #333;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .msg, .error {
+      text-align: center;
+      margin: 10px 0;
+    }
+    .msg { color: green; }
+    .error { color: red; }
+    .post {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 20px;
+      border-radius: 5px;
+      background: #f9f9f9;
+    }
+    .post-title {
+      font-weight: bold;
+      font-size: 1.2em;
+    }
+    .post-date {
+      font-size: 0.9em;
+      color: gray;
+      margin-bottom: 10px;
+    }
+    .post-desc {
+      margin-bottom: 10px;
+    }
+    .post img {
+      max-width: 100%;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    .comments {
+      margin-top: 15px;
+      background: #e9e9e9;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .comment {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 5px;
+    }
+    .comment-author {
+      font-weight: bold;
+    }
+    .comment-text {
+      margin-left: 10px;
+    }
+    .comment-form input {
+      width: 48%;
+      display: inline-block;
+      margin-right: 4%;
+    }
+    .comment-form input:last-child {
+      margin-right: 0;
+    }
+    .comment-form textarea {
+      width: 100%;
+      margin-top: 5px;
+      height: 60px;
+    }
+    #logoutBtn {
+      display: none;
+      margin: 10px auto;
+      padding: 10px 20px;
+      background: #cc0000;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      display: block;
+      max-width: 100px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>User Registration</h2>
+    <form id="registerForm">
+      <input type="text" id="regUsername" placeholder="Username" required />
+      <input type="password" id="regPassword" placeholder="Password" required />
+      <button type="submit">Register</button>
+    </form>
+
+    <h2>User Login</h2>
+    <form id="loginForm">
+      <input type="text" id="loginUsername" placeholder="Username" required />
+      <input type="password" id="loginPassword" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+
+    <button id="logoutBtn">Logout</button>
+
+    <div class="msg" id="message"></div>
+    <div class="error" id="error"></div>
+
+    <div id="postSection" style="display:none;">
+      <h2>Create a Post</h2>
+      <form id="postForm">
+        <input type="text" id="postTitle" placeholder="Post Title" required />
+        <input type="date" id="postDate" required />
+        <input type="url" id="postImageURL" placeholder="Image URL (optional)" />
+        <textarea id="postDesc" placeholder="Post Description" required></textarea>
+        <button type="submit">Publish Post</button>
+      </form>
+    </div>
+
+    <div id="postsContainer">
+      <h2>All Posts</h2>
+    </div>
+  </div>
+
+<script>
+  const registerForm = document.getElementById("registerForm");
+  const loginForm = document.getElementById("loginForm");
+  const postForm = document.getElementById("postForm");
+  const postSection = document.getElementById("postSection");
+  const postsContainer = document.getElementById("postsContainer");
+  const messageDiv = document.getElementById("message");
+  const errorDiv = document.getElementById("error");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  let currentUser = null;
+
+  window.onload = () => {
+    currentUser = localStorage.getItem("currentUser");
+    if (currentUser) {
+      messageDiv.textContent = `Welcome back, ${currentUser}!`;
+      postSection.style.display = "block";
+      logoutBtn.style.display = "block";
+      registerForm.style.display = "none";
+      loginForm.style.display = "none";
+    } else {
+      logoutBtn.style.display = "none";
+    }
+    loadPosts();
+  };
+
+  registerForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    const username = document.getElementById("regUsername").value.trim();
+    const password = document.getElementById("regPassword").value;
+
+    let users = JSON.parse(localStorage.getItem("users")) || [];
+    if (users.find(u => u.username === username)) {
+      errorDiv.textContent = "Username already exists.";
+      messageDiv.textContent = "";
+      return;
+    }
+
+    users.push({ username, password });
+    localStorage.setItem("users", JSON.stringify(users));
+    messageDiv.textContent = "Registration successful! Please log in.";
+    errorDiv.textContent = "";
+    registerForm.reset();
+  });
+
+  loginForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    const username = document.getElementById("loginUsername").value.trim();
+    const password = document.getElementById("loginPassword").value;
+
+    let users = JSON.parse(localStorage.getItem("users")) || [];
+    const user = users.find(u => u.username === username && u.password === password);
+
+    if (user) {
+      currentUser = username;
+      localStorage.setItem("currentUser", currentUser);
+      messageDiv.textContent = `Welcome, ${username}!`;
+      errorDiv.textContent = "";
+      postSection.style.display = "block";
+      logoutBtn.style.display = "block";
+      registerForm.style.display = "none";
+      loginForm.style.display = "none";
+    } else {
+      errorDiv.textContent = "Invalid username or password.";
+      messageDiv.textContent = "";
+    }
+  });
+
+  logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("currentUser");
+    currentUser = null;
+    messageDiv.textContent = "";
+    errorDiv.textContent = "";
+    postSection.style.display = "none";
+    logoutBtn.style.display = "none";
+    registerForm.style.display = "block";
+    loginForm.style.display = "block";
+  });
+
+  postForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!currentUser) {
+      errorDiv.textContent = "You must be logged in to post.";
+      return;
+    }
+
+    const title = document.getElementById("postTitle").value;
+    const date = document.getElementById("postDate").value;
+    const imageURL = document.getElementById("postImageURL").value.trim();
+    const description = document.getElementById("postDesc").value;
+
+    const post = {
+      title,
+      date,
+      imageURL,
+      description,
+      author: currentUser,
+      comments: []  // store comments per post
+    };
+
+    let posts = JSON.parse(localStorage.getItem("posts")) || [];
+    posts.push(post);
+    localStorage.setItem("posts", JSON.stringify(posts));
+
+    displayPost(post, posts.length - 1);
+    postForm.reset();
+  });
+
+  function loadPosts() {
+    const posts = JSON.parse(localStorage.getItem("posts")) || [];
+    postsContainer.innerHTML = "<h2>All Posts</h2>";
+    posts.forEach((post, index) => displayPost(post, index));
+  }
+
+  function displayPost(post, index) {
+    const div = document.createElement("div");
+    div.className = "post";
+
+    let imageHTML = "";
+    if (post.imageURL) {
+      imageHTML = `<img src="${post.imageURL}" alt="Post Image" onerror="this.style.display='none'"/>`;
+    }
+
+    const commentsHTML = generateCommentsHTML(post.comments, index);
+
+    div.innerHTML = `
+      <div class="post-title">${escapeHTML(post.title)}</div>
+      <div class="post-date">Date: ${escapeHTML(post.date)} | Author: ${escapeHTML(post.author)}</div>
+      ${imageHTML}
+      <div class="post-desc">${escapeHTML(post.description)}</div>
+      <div class="comments">
+        <h4>Comments</h4>
+        <div id="comments-${index}">
+          ${commentsHTML}
+        </div>
+        <form class="comment-form" data-post-index="${index}">
+          <input type="text" name="commentAuthor" placeholder="Your name" required />
+          <textarea name="commentText" placeholder="Add a comment" required></textarea>
+          <button type="submit">Add Comment</button>
+        </form>
+      </div>
+    `;
+    postsContainer.appendChild(div);
+
+    const commentForm = div.querySelector(".comment-form");
+    commentForm.addEventListener("submit", addComment);
+  }
+
+  function generateCommentsHTML(comments = [], postIndex) {
+    if (!comments.length) return "<p>No comments yet.</p>";
+    return comments.map(c =>
+      `<div class="comment">
+         <span class="comment-author">${escapeHTML(c.author)}:</span>
+         <span class="comment-text">${escapeHTML(c.text)}</span>
+       </div>`
+    ).join("");
+  }
+
+  function addComment(e) {
+    e.preventDefault();
+    const form = e.target;
+    const postIndex = form.dataset.postIndex;
+    const author = form.commentAuthor.value.trim();
+    const text = form.commentText.value.trim();
+
+    if (!author || !text) return;
+
+    let posts = JSON.parse(localStorage.getItem("posts")) || [];
+    if (!posts[postIndex].comments) posts[postIndex].comments = [];
+    posts[postIndex].comments.push({ author, text });
+    localStorage.setItem("posts", JSON.stringify(posts));
+
+    const commentsDiv = document.getElementById(`comments-${postIndex}`);
+    commentsDiv.innerHTML = generateCommentsHTML(posts[postIndex].comments, postIndex);
+
+    form.reset();
+  }
+
+  // Escape HTML to prevent injection in comments and posts
+  function escapeHTML(str) {
+    if (!str) return "";
+    return str.replace(/[&<>"']/g, function(m) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+    });
+  }
+</script>
+</body>
+</html>
 
