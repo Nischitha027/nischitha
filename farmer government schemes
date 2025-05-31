@@ -1,1 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Farmer Portal</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e6f2ff;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #006633;
+      color: white;
+      padding: 1rem 2rem;
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    input, select, button {
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      font-size: 1rem;
+      border-radius: 4px;
+      border: 1.5px solid #006633;
+    }
+    button {
+      background: #009933;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 1rem;
+    }
+    button:hover {
+      background: #007a29;
+    }
+    form {
+      background: white;
+      border: 2px solid #006633;
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    #dashboard {
+      background: white;
+      border: 2px solid #006633;
+      border-radius: 6px;
+      padding: 1.5rem;
+    }
+    h2 {
+      color: #004d26;
+    }
+    .section {
+      margin-bottom: 1.5rem;
+    }
+    .schemes-list, .applied-list, .crop-list {
+      list-style: none;
+      padding-left: 0;
+    }
+    .schemes-list li, .applied-list li, .crop-list li {
+      border: 1px solid #006633;
+      margin-bottom: 0.5rem;
+      padding: 0.6rem;
+      border-radius: 4px;
+      position: relative;
+    }
+    .apply-btn {
+      float: right;
+      background: #007a29;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.9rem;
+    }
+    .apply-btn:hover {
+      background: #00581a;
+    }
+    #logoutBtn {
+      float: right;
+      background: #cc0000;
+      margin-top: -2rem;
+    }
+    #logoutBtn:hover {
+      background: #990000;
+    }
+    .error {
+      color: red;
+      margin: 0.3rem 0;
+    }
+    #welcomeMsg {
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    /* Popup Form */
+    .popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .popup-content {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      width: 300px;
+      position: relative;
+    }
+    .popup-content h3 {
+      margin-top: 0;
+    }
+    .close-btn {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: red;
+      color: white;
+      border: none;
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>Farmer Portal</header>
+  <main>
+    <form id="registerForm">
+      <h2>Register</h2>
+      <input type="text" id="regUsername" placeholder="Username" required /><br />
+      <input type="password" id="regPassword" placeholder="Password" required /><br />
+      <button type="submit">Register</button>
+      <p class="error" id="registerError"></p>
+    </form>
+
+    <form id="loginForm">
+      <h2>Login</h2>
+      <input type="text" id="loginUsername" placeholder="Username" required /><br />
+      <input type="password" id="loginPassword" placeholder="Password" required /><br />
+      <button type="submit">Login</button>
+      <p class="error" id="loginError"></p>
+    </form>
+
+    <div id="dashboard" style="display:none;">
+      <button id="logoutBtn">Logout</button>
+      <p id="welcomeMsg"></p>
+
+      <div class="section">
+        <h2>Your Crop Details</h2>
+        <ul class="crop-list" id="cropList"></ul>
+      </div>
+
+      <div class="section">
+        <h2>Government Schemes</h2>
+        <ul class="schemes-list" id="schemesList"></ul>
+      </div>
+
+      <div class="section">
+        <h2>Applied Schemes</h2>
+        <ul class="applied-list" id="appliedList"></ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- Scheme Application Popup -->
+  <div class="popup" id="applicationPopup">
+    <div class="popup-content">
+      <button class="close-btn" onclick="closePopup()">×</button>
+      <h3>Apply for Scheme</h3>
+      <form id="schemeForm">
+        <input type="text" id="applicantName" placeholder="Full Name" required><br>
+        <input type="text" id="aadhaar" placeholder="Aadhaar Number" required><br>
+        <input type="text" id="landSize" placeholder="Land Size (e.g. 2 acres)" required><br>
+        <input type="text" id="mobile" placeholder="Mobile Number" required><br>
+        <button type="submit">Submit Application</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const dummyCrops = [
+      { name: "Wheat", season: "Rabi", area: "2 acres" },
+      { name: "Rice", season: "Kharif", area: "1.5 acres" },
+    ];
+
+    const schemes = [
+      { id: 1, name: "PM-KISAN", benefit: "₹6,000 annual", details: "₹2,000 every 4 months." },
+      { id: 2, name: "Soil Health Card", benefit: "Free soil testing", details: "Test and improve soil health." },
+      { id: 3, name: "PMFBY", benefit: "Crop Insurance", details: "Insurance against crop failure." },
+      { id: 4, name: "Irrigation Subsidy", benefit: "Up to 80% subsidy", details: "For drip & sprinkler systems." },
+      { id: 5, name: "Tractor Subsidy", benefit: "50% subsidy", details: "Subsidy on purchase of tractors." },
+      { id: 6, name: "Seed Distribution", benefit: "Free certified seeds", details: "High-quality crop seeds." }
+    ];
+
+    let currentApplyingScheme = null;
+
+    const registerForm = document.getElementById('registerForm');
+    const loginForm = document.getElementById('loginForm');
+    const dashboard = document.getElementById('dashboard');
+    const welcomeMsg = document.getElementById('welcomeMsg');
+    const cropList = document.getElementById('cropList');
+    const schemesList = document.getElementById('schemesList');
+    const appliedList = document.getElementById('appliedList');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const registerError = document.getElementById('registerError');
+    const loginError = document.getElementById('loginError');
+    const popup = document.getElementById('applicationPopup');
+    const schemeForm = document.getElementById('schemeForm');
+
+    function getUsers() {
+      return JSON.parse(localStorage.getItem('farmersUsers') || '{}');
+    }
+    function saveUsers(users) {
+      localStorage.setItem('farmersUsers', JSON.stringify(users));
+    }
+    function setCurrentUser(username) {
+      localStorage.setItem('farmersCurrentUser', username);
+    }
+    function getCurrentUser() {
+      return localStorage.getItem('farmersCurrentUser');
+    }
+    function clearCurrentUser() {
+      localStorage.removeItem('farmersCurrentUser');
+    }
+    function getAppliedSchemes(username) {
+      return JSON.parse(localStorage.getItem(`appliedSchemes_${username}`) || '[]');
+    }
+    function saveAppliedSchemes(username, applied) {
+      localStorage.setItem(`appliedSchemes_${username}`, JSON.stringify(applied));
+    }
+
+    registerForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = document.getElementById('regUsername').value.trim();
+      const password = document.getElementById('regPassword').value;
+      if (!username || !password) return;
+      let users = getUsers();
+      if (users[username]) {
+        registerError.textContent = "Username already exists.";
+        return;
+      }
+      users[username] = { password };
+      saveUsers(users);
+      alert("Registered successfully.");
+      registerForm.reset();
+    });
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const users = getUsers();
+      if (!users[username] || users[username].password !== password) {
+        loginError.textContent = "Invalid credentials.";
+        return;
+      }
+      setCurrentUser(username);
+      showDashboard();
+    });
+
+    function showDashboard() {
+      const username = getCurrentUser();
+      if (!username) return;
+      registerForm.style.display = "none";
+      loginForm.style.display = "none";
+      dashboard.style.display = "block";
+      welcomeMsg.textContent = `Welcome, ${username}!`;
+      cropList.innerHTML = "";
+      dummyCrops.forEach(crop => {
+        cropList.innerHTML += `<li>${crop.name} - ${crop.season}, ${crop.area}</li>`;
+      });
+
+      const applied = getAppliedSchemes(username);
+      schemesList.innerHTML = "";
+      schemes.forEach(scheme => {
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${scheme.name}</strong> - ${scheme.benefit}<br/><small>${scheme.details}</small>`;
+        if (applied.includes(scheme.id)) {
+          li.innerHTML += `<button class="apply-btn" disabled>Applied</button>`;
+        } else {
+          const btn = document.createElement('button');
+          btn.textContent = "Apply";
+          btn.className = "apply-btn";
+          btn.onclick = () => openPopup(scheme.id);
+          li.appendChild(btn);
+        }
+        schemesList.appendChild(li);
+      });
+
+      appliedList.innerHTML = applied.map(id => {
+        const s = schemes.find(s => s.id === id);
+        return `<li>${s ? s.name : "Unknown Scheme"}</li>`;
+      }).join("") || "<li>No schemes applied yet.</li>";
+    }
+
+    function openPopup(schemeId) {
+      currentApplyingScheme = schemeId;
+      schemeForm.reset();
+      popup.style.display = "flex";
+    }
+
+    function closePopup() {
+      popup.style.display = "none";
+    }
+
+    schemeForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const username = getCurrentUser();
+      const applied = getAppliedSchemes(username);
+      if (!applied.includes(currentApplyingScheme)) {
+        applied.push(currentApplyingScheme);
+        saveAppliedSchemes(username, applied);
+        alert("Application submitted!");
+      }
+      closePopup();
+      showDashboard();
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      clearCurrentUser();
+      location.reload();
+    });
+
+    if (getCurrentUser()) showDashboard();
+  </script>
+</body>
+</html>
 
