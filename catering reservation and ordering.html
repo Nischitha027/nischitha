@@ -1,1 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Catering Reservation & Ordering System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    h1, h2, h3 {
+      color: #333;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    input, textarea, button {
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    nav {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    nav button {
+      margin: 5px;
+    }
+    .hidden {
+      display: none;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      background: #eee;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <nav>
+      <button onclick="showSection('home')">Home</button>
+      <button onclick="showSection('userSection')">User Module</button>
+      <button onclick="showSection('adminLoginSection')">Admin Module</button>
+    </nav>
+
+    <div id="home">
+      <h1>Welcome to Our Catering Service</h1>
+      <p>Select an option to get started.</p>
+    </div>
+
+    <!-- User Section -->
+    <div id="userSection" class="hidden">
+      <h2>Catering Reservation</h2>
+      <form id="orderForm">
+        <input type="text" id="name" placeholder="Your Name" required />
+        <input type="date" id="date" required />
+        <input type="number" id="guests" placeholder="No. of Guests" required min="1" />
+
+        <h4>Select Menu Items:</h4>
+        <label><input type="checkbox" value="Chicken Curry"> Chicken Curry - $8</label>
+        <label><input type="checkbox" value="Paneer Butter Masala"> Paneer Butter Masala - $7</label>
+        <label><input type="checkbox" value="Veg Biryani"> Veg Biryani - $6</label>
+        <label><input type="checkbox" value="Dal Tadka"> Dal Tadka - $5</label>
+        <label><input type="checkbox" value="Gulab Jamun"> Gulab Jamun - $3</label>
+
+        <button type="submit">Place Order</button>
+      </form>
+      <div id="successMsg"></div>
+    </div>
+
+    <!-- Admin Login -->
+    <div id="adminLoginSection" class="hidden">
+      <h2>Admin Login</h2>
+      <form id="adminLoginForm">
+        <input type="text" id="adminUser" placeholder="Username" required />
+        <input type="password" id="adminPass" placeholder="Password" required />
+        <button type="submit">Login</button>
+      </form>
+    </div>
+
+    <!-- Admin Panel -->
+    <div id="adminPanel" class="hidden">
+      <h3>Admin Dashboard - Orders</h3>
+      <ul id="ordersList"></ul>
+    </div>
+  </div>
+
+  <script>
+    const menuPrices = {
+      "Chicken Curry": 8,
+      "Paneer Butter Masala": 7,
+      "Veg Biryani": 6,
+      "Dal Tadka": 5,
+      "Gulab Jamun": 3
+    };
+
+    function showSection(sectionId) {
+      ['home', 'userSection', 'adminLoginSection', 'adminPanel'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(sectionId).classList.remove('hidden');
+    }
+
+    function saveOrder(order) {
+      let orders = JSON.parse(localStorage.getItem('cateringOrders')) || [];
+      orders.push(order);
+      localStorage.setItem('cateringOrders', JSON.stringify(orders));
+    }
+
+    function getOrders() {
+      return JSON.parse(localStorage.getItem('cateringOrders')) || [];
+    }
+
+    function deleteOrder(index) {
+      let orders = getOrders();
+      orders.splice(index, 1);
+      localStorage.setItem('cateringOrders', JSON.stringify(orders));
+      loadOrders();
+    }
+
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value;
+      const date = document.getElementById('date').value;
+      const guests = parseInt(document.getElementById('guests').value);
+      const checkboxes = document.querySelectorAll('#orderForm input[type="checkbox"]:checked');
+      const selectedMenu = Array.from(checkboxes).map(cb => cb.value);
+
+      if (selectedMenu.length === 0) {
+        alert('Please select at least one menu item.');
+        return;
+      }
+
+      let total = selectedMenu.reduce((sum, item) => sum + menuPrices[item] * guests, 0);
+
+      const order = {
+        name,
+        date,
+        guests,
+        menu: selectedMenu,
+        total,
+        timestamp: new Date().toISOString()
+      };
+
+      saveOrder(order);
+      document.getElementById('successMsg').textContent = `Order placed successfully! Total: $${total}`;
+      this.reset();
+    });
+
+    document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const username = document.getElementById('adminUser').value;
+      const password = document.getElementById('adminPass').value;
+
+      if (username === 'admin' && password === 'admin123') {
+        showSection('adminPanel');
+        loadOrders();
+      } else {
+        alert('Invalid admin credentials');
+      }
+    });
+
+    function loadOrders() {
+      const orders = getOrders();
+      const list = document.getElementById('ordersList');
+      list.innerHTML = '';
+      orders.forEach((order, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <strong>${order.name}</strong> | ${order.date}<br>
+          Guests: ${order.guests}<br>
+          Menu: ${order.menu.join(', ')}<br>
+          Total: <strong>$${order.total}</strong><br>
+          <button onclick="deleteOrder(${index})">Delete</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+  </script>
+
+</body>
+</html>
 
